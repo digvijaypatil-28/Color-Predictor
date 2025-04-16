@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Color Detection App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>🎨 Color Detection App</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" onchange="this.form.submit()" required>
+    </form>
+
+    {% if uploaded_image %}
+    <div class="image-container">
+        <img id="uploadedImage" src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" onclick="getColor(event)" alt="Uploaded Image">
+    </div>
+    <div id="colorResult"></div>
+    <input type="hidden" id="filename" value="{{ uploaded_image }}">
+    {% endif %}
+
+    <script>
+        function getColor(e) {
+            const img = document.getElementById('uploadedImage');
+            const rect = img.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const naturalX = Math.round((x / img.clientWidth) * img.naturalWidth);
+            const naturalY = Math.round((y / img.clientHeight) * img.naturalHeight);
+
+            const formData = new FormData();
+            formData.append("x", naturalX);
+            formData.append("y", naturalY);
+            formData.append("filename", document.getElementById("filename").value);
+
+            fetch("/", {
+                method: "POST",
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  const resultDiv = document.getElementById("colorResult");
+                  resultDiv.innerHTML = `
+                      <div class="result-box" style="background-color: rgb(${data.R}, ${data.G}, ${data.B});">
+                          <p><strong>Color:</strong> ${data.color}</p>
+                          <p><strong>RGB:</strong> (${data.R}, ${data.G}, ${data.B})</p>
+                      </div>
+                  `;
+              });
+        }
+    </script>
+</body>
+</html>
